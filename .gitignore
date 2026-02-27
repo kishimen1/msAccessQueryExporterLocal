@@ -1,0 +1,6 @@
+# Claude Code ローカル設定
+.claude/
+
+# 抽出結果ファイル（個人のDBスキーマが含まれる可能性があるため除外）
+*_result.json
+*_クエリ一覧.txt

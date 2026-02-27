@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access クエリエクスポーター — ビューア</title>
+    <meta name="description" content="Accessデータベースのクエリ解析結果を表示するオフラインビューア">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" id="hljs-dark"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" id="hljs-light"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" disabled>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-card-hover: rgba(31, 41, 55, 0.8);
+            --border: rgba(99, 102, 241, 0.2);
+            --border-hover: rgba(99, 102, 241, 0.5);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --tag-select: #3b82f6;
+            --tag-update: #f59e0b;
+            --tag-delete: #ef4444;
+            --tag-insert: #22c55e;
+            --tag-cross: #a855f7;
+            --tag-union: #06b6d4;
+            --tag-other: #64748b;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-card-hover: rgba(241, 245, 249, 0.9);
+            --border: rgba(99, 102, 241, 0.2);
+            --border-hover: rgba(99, 102, 241, 0.4);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-light: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+        }
+
+        [data-theme="light"] body::before {
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 60%);
+        }
+
+        [data-theme="light"] .query-type-tag.select {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+
+        [data-theme="light"] .query-type-tag.update {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        [data-theme="light"] .query-type-tag.delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        [data-theme="light"] .query-type-tag.insert {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+
+        [data-theme="light"] .query-type-tag.cross {
+            background: rgba(168, 85, 247, 0.1);
+            color: #7c3aed;
+        }
+
+        [data-theme="light"] .query-type-tag.union {
+            background: rgba(6, 182, 212, 0.1);
+            color: #0891b2;
+        }
+
+        [data-theme="light"] .query-type-tag.other {
+            background: rgba(100, 116, 139, 0.1);
+            color: #475569;
+        }
+
+        [data-theme="light"] .explanation-title {
+            color: #b45309;
+        }
+
+        [data-theme="light"] .explanation-summary {
+            background: rgba(251, 191, 36, 0.1);
+            border-left-color: rgba(251, 191, 36, 0.5);
+        }
+
+        [data-theme="light"] .explanation-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="light"] .exp-value .exp-tag {
+            background: rgba(99, 102, 241, 0.08);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        [data-theme="light"] .exp-value .exp-join-type {
+            background: rgba(6, 182, 212, 0.1);
+            color: #0891b2;
+        }
+
+        [data-theme="light"] .field-tag {
+            background: rgba(99, 102, 241, 0.06);
+            border-color: rgba(99, 102, 241, 0.15);
+            color: var(--text-secondary);
+        }
+
+        [data-theme="light"] .stat-value {
+            color: var(--accent);
+        }
+
+        [data-theme="light"] .header .badge {
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.25);
+            color: #16a34a;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-light), #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .header .badge {
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Load Zone */
+        .load-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            transition: all var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .load-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .load-zone:hover,
+        .load-zone.dragover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .load-zone:hover::before,
+        .load-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .load-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .load-zone h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .load-zone p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .load-zone input[type="file"] {
+            display: none;
+        }
+
+        /* Error */
+        .error-msg {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.25rem;
+            margin-top: 1.5rem;
+            color: #fca5a5;
+            font-size: 0.9rem;
+        }
+
+        .error-msg.active {
+            display: block;
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .results-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .results-info .filename {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .results-info .meta {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .results-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-light);
+            border-color: var(--accent-light);
+        }
+
+        .btn .icon {
+            font-size: 1rem;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent-light);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            color: var(--accent-light);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-light);
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.4rem;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Table cards */
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            transition: all var(--transition);
+        }
+
+        .table-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .table-card-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-card-name .icon {
+            font-size: 1.1rem;
+        }
+
+        .table-card-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .field-tag {
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Relations */
+        .relation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .relation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            flex-wrap: wrap;
+        }
+
+        .relation-table {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--accent-light);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .relation-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        .relation-fields {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* Query cards */
+        .query-filter {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.55rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .query-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .query-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all var(--transition);
+        }
+
+        .query-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .query-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            gap: 0.75rem;
+        }
+
+        .query-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .query-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .query-type-tag {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        .query-type-tag.select {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93bbfd;
+        }
+
+        .query-type-tag.update {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .query-type-tag.delete {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .query-type-tag.insert {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+        }
+
+        .query-type-tag.cross {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c4b5fd;
+        }
+
+        .query-type-tag.union {
+            background: rgba(6, 182, 212, 0.15);
+            color: #67e8f9;
+        }
+
+        .query-type-tag.other {
+            background: rgba(100, 116, 139, 0.15);
+            color: #94a3b8;
+        }
+
+        .query-actions {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-icon.copied {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .query-body {
+            padding: 0;
+        }
+
+        .query-body pre {
+            margin: 0;
+            padding: 1rem 1.25rem;
+            background: transparent !important;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .query-body code {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.82rem;
+            background: transparent !important;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .load-zone {
+                padding: 2rem 1.5rem;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Query Explanation */
+        .query-explanation {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: rgba(251, 191, 36, 0.04);
+        }
+
+        .explanation-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #fbbf24;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .explanation-summary {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            padding: 0.6rem 0.8rem;
+            background: rgba(251, 191, 36, 0.08);
+            border-radius: 6px;
+            border-left: 3px solid rgba(251, 191, 36, 0.4);
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .explanation-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .explanation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 4px;
+            transition: background var(--transition);
+        }
+
+        .explanation-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .explanation-item .exp-icon {
+            flex-shrink: 0;
+            width: 1.2em;
+            text-align: center;
+        }
+
+        .explanation-item .exp-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            min-width: 7em;
+        }
+
+        .explanation-item .exp-value {
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            word-break: break-all;
+        }
+
+        .explanation-item .exp-hint {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-style: italic;
+            margin-left: 0.3rem;
+        }
+
+        .exp-value .exp-tag {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            margin: 0.1rem 0.15rem;
+            font-size: 0.75rem;
+        }
+
+        .exp-value .exp-join-type {
+            display: inline-block;
+            padding: 0.05rem 0.35rem;
+            border-radius: 3px;
+            background: rgba(6, 182, 212, 0.12);
+            color: #67e8f9;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-right: 0.3rem;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1.2rem;
+            right: 1.5rem;
+            z-index: 50;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            backdrop-filter: blur(8px);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            transform: scale(1.1);
+        }
+
+        /* Filter Buttons */
+        .filter-bar {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .filter-btn {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-secondary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .filter-btn .filter-count {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-left: 0.2rem;
+        }
+
+        /* Cross-link styles */
+        .table-related-queries {
+            margin-top: 0.75rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .table-related-queries .related-title {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .table-related-queries .related-link {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            margin: 0.15rem;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            color: var(--accent-light);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .table-related-queries .related-link:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--accent);
+        }
+
+        .exp-table-link {
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .exp-table-link:hover {
+            background: rgba(99, 102, 241, 0.2) !important;
+            border-color: var(--accent) !important;
+        }
+
+        .highlight-flash {
+            animation: flashHighlight 1.5s ease;
+        }
+
+        @keyframes flashHighlight {
+
+            0%,
+            100% {
+                box-shadow: none;
+            }
+
+            20% {
+                box-shadow: 0 0 0 3px var(--accent-glow), 0 0 20px var(--accent-glow);
+            }
+
+            80% {
+                box-shadow: 0 0 0 3px var(--accent-glow), 0 0 20px var(--accent-glow);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.4s ease forwards;
+        }
+
+        .fade-in-delay-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .fade-in-delay-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .fade-in-delay-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" title="テーマ切替">🌙</button>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>⚡ Access クエリエクスポーター <span class="badge">ローカル版</span></h1>
+            <p>JSON 結果ファイルを読み込んで表示</p>
+        </header>
+
+        <!-- Load Zone -->
+        <div class="load-zone" id="loadZone">
+            <span class="load-icon">📂</span>
+            <h2>JSON 結果ファイルをドロップ or クリックして選択</h2>
+            <p>AccessQueryExporter.bat で出力された _result.json ファイルを開いてください</p>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="errorMsg"></div>
+
+        <!-- Results -->
+        <div class="results" id="results">
+            <!-- Results Header -->
+            <div class="results-header fade-in">
+                <div class="results-info">
+                    <span class="filename" id="filename"></span>
+                    <span class="meta" id="exportedAt"></span>
+                </div>
+                <div class="results-actions">
+                    <button class="btn btn-primary" onclick="downloadAll()" title="テキストファイルとしてダウンロード">
+                        <span class="icon">📥</span> 一括ダウンロード
+                    </button>
+                    <button class="btn" onclick="resetApp()" title="別のファイルを読み込む">
+                        <span class="icon">🔄</span> リセット
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row fade-in fade-in-delay-1">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTables">0</div>
+                    <div class="stat-label">テーブル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statRelations">0</div>
+                    <div class="stat-label">リレーション</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statQueries">0</div>
+                    <div class="stat-label">クエリ</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs fade-in fade-in-delay-2">
+                <button class="tab active" data-tab="queries">
+                    クエリ / SQL<span class="tab-badge" id="badgeQueries">0</span>
+                </button>
+                <button class="tab" data-tab="tables">
+                    テーブル<span class="tab-badge" id="badgeTables">0</span>
+                </button>
+                <button class="tab" data-tab="relations">
+                    リレーション<span class="tab-badge" id="badgeRelations">0</span>
+                </button>
+            </div>
+
+            <!-- Queries Panel -->
+            <div class="tab-panel active fade-in fade-in-delay-3" id="panel-queries">
+                <div class="query-filter">
+                    <input type="text" class="search-input" id="querySearch" placeholder="🔍 クエリ名・SQL内容で検索...">
+                </div>
+                <div class="filter-bar" id="filterBar"></div>
+                <div class="query-list" id="queryList"></div>
+            </div>
+
+            <!-- Tables Panel -->
+            <div class="tab-panel" id="panel-tables">
+                <div class="table-grid" id="tableGrid"></div>
+            </div>
+
+            <!-- Relations Panel -->
+            <div class="tab-panel" id="panel-relations">
+                <div class="relation-list" id="relationList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentData = null;
+        let activeFilter = 'all';
+
+        // ===== Theme Toggle =====
+        (function initTheme() {
+            const saved = localStorage.getItem('aqe-theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                document.getElementById('themeToggle').textContent = saved === 'light' ? '☀️' : '🌙';
+                document.getElementById('hljs-dark').disabled = (saved === 'light');
+                document.getElementById('hljs-light').disabled = (saved !== 'light');
+            }
+        })();
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            document.getElementById('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
+            document.getElementById('hljs-dark').disabled = (next === 'light');
+            document.getElementById('hljs-light').disabled = (next !== 'light');
+            localStorage.setItem('aqe-theme', next);
+            // Re-highlight code blocks
+            document.querySelectorAll('pre code.language-sql').forEach(block => {
+                block.removeAttribute('data-highlighted');
+                hljs.highlightElement(block);
+            });
+        });
+
+        // ===== SQL Formatter =====
+        function formatSQL(sql) {
+            let s = sql.replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+            const majorKeywords = ['SELECT ', 'FROM ', 'WHERE ', 'INNER JOIN ', 'LEFT JOIN ', 'LEFT OUTER JOIN ', 'RIGHT JOIN ', 'RIGHT OUTER JOIN ', 'CROSS JOIN ', 'JOIN ', 'ON ', 'ORDER BY ', 'GROUP BY ', 'HAVING ', 'SET ', 'VALUES ', 'INTO ', 'INSERT INTO ', 'UPDATE ', 'DELETE ', 'UNION ALL ', 'UNION ', 'TRANSFORM ', 'PIVOT '];
+            const indentKeywords = ['AND ', 'OR '];
+            let result = '';
+            let i = 0;
+            let indent = 0;
+            let parenDepth = 0;
+            let bracketDepth = 0;
+            const getIndent = (n) => '  '.repeat(n);
+
+            while (i < s.length) {
+                // Track bracket/paren depth
+                if (s[i] === '[') { bracketDepth++; result += s[i]; i++; continue; }
+                if (s[i] === ']') { bracketDepth = Math.max(0, bracketDepth - 1); result += s[i]; i++; continue; }
+                if (s[i] === '(') { parenDepth++; result += s[i]; i++; continue; }
+                if (s[i] === ')') { parenDepth = Math.max(0, parenDepth - 1); result += s[i]; i++; continue; }
+
+                // Inside brackets or parens - output as-is
+                if (bracketDepth > 0 || parenDepth > 0) {
+                    result += s[i]; i++; continue;
+                }
+
+                let matched = false;
+                const remaining = s.substring(i);
+                const remainingUpper = remaining.toUpperCase();
+
+                // Check major keywords
+                for (const kw of majorKeywords) {
+                    if (remainingUpper.startsWith(kw)) {
+                        if (kw === 'SELECT ' || kw === 'UPDATE ' || kw === 'DELETE ' || kw === 'INSERT INTO ' || kw === 'TRANSFORM ') {
+                            if (result.trim().length > 0) result += '\n';
+                            indent = 0;
+                            result += getIndent(indent) + remaining.substring(0, kw.trimEnd().length);
+                            result += '\n' + getIndent(1);
+                            indent = 1;
+                            i += kw.length;
+                        } else if (kw === 'FROM ' || kw === 'WHERE ' || kw === 'ORDER BY ' || kw === 'GROUP BY ' || kw === 'HAVING ' || kw === 'SET ') {
+                            result += '\n' + remaining.substring(0, kw.trimEnd().length);
+                            result += '\n' + getIndent(1);
+                            indent = 1;
+                            i += kw.length;
+                        } else if (kw === 'UNION ' || kw === 'UNION ALL ') {
+                            indent = 0;
+                            result += '\n' + remaining.substring(0, kw.trimEnd().length) + '\n';
+                            i += kw.length;
+                        } else if (kw.includes('JOIN')) {
+                            result += '\n' + getIndent(indent) + remaining.substring(0, kw.length);
+                            i += kw.length;
+                        } else {
+                            result += '\n' + getIndent(indent) + remaining.substring(0, kw.length);
+                            i += kw.length;
+                        }
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                // Check AND/OR
+                for (const kw of indentKeywords) {
+                    if (remainingUpper.startsWith(kw)) {
+                        result += '\n' + getIndent(indent + 1) + remaining.substring(0, kw.length);
+                        i += kw.length;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                // Comma at top level - add newline after
+                if (s[i] === ',') {
+                    result += ',\n' + getIndent(indent);
+                    i++;
+                    while (i < s.length && s[i] === ' ') i++;
+                    continue;
+                }
+
+                result += s[i];
+                i++;
+            }
+            return result.trim();
+        }
+
+        // ===== Load Zone =====
+        const loadZone = document.getElementById('loadZone');
+        const fileInput = document.getElementById('fileInput');
+        const errorMsg = document.getElementById('errorMsg');
+        const results = document.getElementById('results');
+
+        loadZone.addEventListener('click', () => fileInput.click());
+
+        loadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            loadZone.classList.add('dragover');
+        });
+
+        loadZone.addEventListener('dragleave', () => {
+            loadZone.classList.remove('dragover');
+        });
+
+        loadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            loadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) loadJsonFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) loadJsonFile(fileInput.files[0]);
+        });
+
+        // ===== Auto-load: find _result.json in same folder =====
+        // When opened from BAT, try to auto-detect and load the JSON via URL params
+        (function autoLoad() {
+            // Check for ?file= parameter (used when opened programmatically)
+            const params = new URLSearchParams(window.location.search);
+            const filePath = params.get('file');
+            if (filePath) {
+                fetch(filePath)
+                    .then(r => r.json())
+                    .then(data => {
+                        currentData = data;
+                        renderResults(data);
+                    })
+                    .catch(() => {
+                        // Silently fail — user can manually load
+                    });
+            }
+        })();
+
+        function loadJsonFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showError('JSON ファイルを選択してください（_result.json）');
+                return;
+            }
+
+            hideError();
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Validate structure
+                    if (!data.filename || !Array.isArray(data.tables) || !Array.isArray(data.queries)) {
+                        throw new Error('無効な JSON 形式です。AccessQueryExporter.bat で出力されたファイルを使用してください。');
+                    }
+
+                    currentData = data;
+                    renderResults(data);
+                } catch (err) {
+                    showError(err.message || 'JSON の読み込みに失敗しました。');
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // ===== UI State =====
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('active');
+            loadZone.style.display = '';
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('active');
+        }
+
+        function resetApp() {
+            currentData = null;
+            results.classList.remove('active');
+            loadZone.style.display = '';
+            fileInput.value = '';
+            hideError();
+        }
+
+        // ===== Tabs =====
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // ===== Render =====
+        function renderResults(data) {
+            document.getElementById('filename').textContent = data.filename;
+            document.getElementById('exportedAt').textContent = `解析日時: ${data.exported_at}`;
+
+            document.getElementById('statTables').textContent = data.tables.length;
+            document.getElementById('statRelations').textContent = (data.relationships || []).length;
+            document.getElementById('statQueries').textContent = data.queries.length;
+            document.getElementById('badgeTables').textContent = data.tables.length;
+            document.getElementById('badgeRelations').textContent = (data.relationships || []).length;
+            document.getElementById('badgeQueries').textContent = data.queries.length;
+
+            renderFilterBar(data.queries);
+            renderQueries(data.queries);
+            renderTables(data.tables, data.queries);
+            renderRelations(data.relationships || []);
+
+            loadZone.style.display = 'none';
+            results.classList.add('active');
+        }
+
+        // ===== Filter Bar =====
+        function renderFilterBar(queries) {
+            const typeCounts = { all: queries.length };
+            queries.forEach(q => {
+                const cls = getTypeClass(q.type);
+                typeCounts[cls] = (typeCounts[cls] || 0) + 1;
+            });
+            const typeLabels = { all: 'すべて', select: '選択', update: '更新', delete: '削除', insert: '追加', cross: 'クロス集計', union: 'ユニオン', other: 'その他' };
+            const bar = document.getElementById('filterBar');
+            let html = '';
+            for (const [key, label] of Object.entries(typeLabels)) {
+                if (key === 'all' || typeCounts[key]) {
+                    const active = key === activeFilter ? ' active' : '';
+                    const count = typeCounts[key] || 0;
+                    html += `<button class="filter-btn${active}" data-filter="${key}">${label}<span class="filter-count">(${count})</span></button>`;
+                }
+            }
+            bar.innerHTML = html;
+            bar.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeFilter = btn.dataset.filter;
+                    bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    applyFilters();
+                });
+            });
+        }
+
+        function applyFilters() {
+            const keyword = document.getElementById('querySearch').value.toLowerCase();
+            document.querySelectorAll('.query-card').forEach(card => {
+                const name = card.dataset.name;
+                const sql = card.dataset.sql || '';
+                const type = card.dataset.type || '';
+                const matchesKeyword = !keyword || name.includes(keyword) || sql.includes(keyword);
+                const matchesType = activeFilter === 'all' || type === activeFilter;
+                card.style.display = (matchesKeyword && matchesType) ? '' : 'none';
+            });
+        }
+
+        function getTypeClass(type) {
+            if (type.includes('選択')) return 'select';
+            if (type.includes('更新')) return 'update';
+            if (type.includes('削除')) return 'delete';
+            if (type.includes('追加')) return 'insert';
+            if (type.includes('クロス')) return 'cross';
+            if (type.includes('ユニオン')) return 'union';
+            return 'other';
+        }
+
+        // ===== SQL Parser =====
+        function parseSQL(sql) {
+            const result = { items: [], summary: '' };
+            const normalized = sql.replace(/\s+/g, ' ').trim();
+            const upper = normalized.toUpperCase();
+
+            // --- クエリ種別 ---
+            if (upper.startsWith('SELECT')) {
+                result.summary = '📊 データを検索して表示するクエリ（選択クエリ）です。';
+                parseSelect(normalized, upper, result);
+            } else if (upper.startsWith('UPDATE')) {
+                result.summary = '✏️ 既存のデータを書き換えるクエリ（更新クエリ）です。';
+                parseUpdate(normalized, upper, result);
+            } else if (upper.startsWith('DELETE')) {
+                result.summary = '⚠️ データを削除するクエリ（削除クエリ）です。実行すると元に戻せません。';
+                parseDelete(normalized, upper, result);
+            } else if (upper.startsWith('INSERT')) {
+                result.summary = '➕ 新しいデータを追加するクエリ（追加クエリ）です。';
+                parseInsert(normalized, upper, result);
+            } else if (upper.startsWith('CREATE TABLE')) {
+                result.summary = '🏗️ 新しいテーブルを作成するクエリ（テーブル作成クエリ）です。';
+            } else if (upper.startsWith('ALTER') || upper.startsWith('DROP') || upper.startsWith('CREATE')) {
+                result.summary = '🔧 データベースの構造を変更するクエリ（データ定義クエリ）です。';
+            } else if (upper.includes('TRANSFORM')) {
+                result.summary = '📊 データをクロス集計（行と列を入れ替えて集計）するクエリです。';
+                parseCrossTab(normalized, upper, result);
+            } else {
+                result.summary = '📝 SQLクエリです。';
+            }
+
+            return result;
+        }
+
+        function extractBetween(upper, startKeyword, endKeywords) {
+            const startIdx = upper.indexOf(startKeyword);
+            if (startIdx === -1) return null;
+            const after = startIdx + startKeyword.length;
+            let endIdx = upper.length;
+            for (const ek of endKeywords) {
+                const idx = upper.indexOf(ek, after);
+                if (idx !== -1 && idx < endIdx) endIdx = idx;
+            }
+            return upper.substring(after, endIdx).trim();
+        }
+
+        function extractBetweenOriginal(normalized, upper, startKeyword, endKeywords) {
+            const startIdx = upper.indexOf(startKeyword);
+            if (startIdx === -1) return null;
+            const after = startIdx + startKeyword.length;
+            let endIdx = normalized.length;
+            for (const ek of endKeywords) {
+                const idx = upper.indexOf(ek, after);
+                if (idx !== -1 && idx < endIdx) endIdx = idx;
+            }
+            return normalized.substring(after, endIdx).trim();
+        }
+
+        function splitFields(str) {
+            // カンマで区切るが、括弧の中のカンマは無視
+            const parts = [];
+            let depth = 0;
+            let current = '';
+            for (let i = 0; i < str.length; i++) {
+                const ch = str[i];
+                if (ch === '(') depth++;
+                else if (ch === ')') depth--;
+                else if (ch === ',' && depth === 0) {
+                    parts.push(current.trim());
+                    current = '';
+                    continue;
+                }
+                current += ch;
+            }
+            if (current.trim()) parts.push(current.trim());
+            return parts;
+        }
+
+        function formatFieldsAsTags(fieldsStr) {
+            if (!fieldsStr || fieldsStr === '*') return '<span class="exp-tag">* (すべてのフィールド)</span>';
+            const fields = splitFields(fieldsStr);
+            return fields.map(f => `<span class="exp-tag">${escapeHtml(f.trim())}</span>`).join(' ');
+        }
+
+        function parseSelect(normalized, upper, result) {
+            // DISTINCT
+            if (upper.match(/^SELECT\s+DISTINCT/i)) {
+                result.items.push({ icon: '✨', label: '重複除外', value: '同じデータが複数ある場合、重複を除いて1つだけ表示します' });
+            }
+            // TOP N
+            const topMatch = upper.match(/^SELECT\s+(?:DISTINCT\s+)?TOP\s+(\d+)/i);
+            if (topMatch) {
+                result.items.push({ icon: '🔝', label: '件数制限', value: `先頭 <span class="exp-tag">${topMatch[1]}件</span> のみ取得します` });
+            }
+
+            // フィールド
+            const fieldsStr = extractBetweenOriginal(normalized, upper, 'SELECT ', [' FROM ']);
+            if (fieldsStr) {
+                let cleanFields = fieldsStr.replace(/^DISTINCT\s+/i, '').replace(/^TOP\s+\d+\s+/i, '').trim();
+                result.items.push({ icon: '📋', label: '取得フィールド', value: formatFieldsAsTags(cleanFields) });
+            }
+
+            // テーブル
+            parseFromClause(normalized, upper, result);
+
+            // JOIN
+            parseJoins(normalized, upper, result);
+
+            // WHERE
+            parseWhere(normalized, upper, result);
+
+            // GROUP BY
+            parseGroupBy(normalized, upper, result);
+
+            // HAVING
+            parseHaving(normalized, upper, result);
+
+            // ORDER BY
+            parseOrderBy(normalized, upper, result);
+
+            // UNION
+            if (upper.includes(' UNION ')) {
+                const unionCount = (upper.match(/\sUNION\s/g) || []).length;
+                result.items.push({ icon: '🔄', label: 'UNION結合', value: `${unionCount + 1}つのクエリ結果を結合しています <span class="exp-hint">（複数の問い合わせ結果をまとめて表示）</span>` });
+            }
+
+            // サブクエリ
+            const subqueryCount = (normalized.match(/\(\s*SELECT\s/gi) || []).length;
+            if (subqueryCount > 0) {
+                result.items.push({ icon: '🔄', label: 'サブクエリ', value: `${subqueryCount}個のサブクエリ（入れ子のクエリ）を含んでいます` });
+            }
+        }
+
+        function parseUpdate(normalized, upper, result) {
+            // 更新テーブル
+            const tableStr = extractBetweenOriginal(normalized, upper, 'UPDATE ', [' SET ', ' INNER JOIN', ' LEFT JOIN', ' RIGHT JOIN']);
+            if (tableStr) {
+                result.items.push({ icon: '📁', label: '更新テーブル', value: `<span class="exp-tag">${escapeHtml(tableStr)}</span>` });
+            }
+
+            // JOIN
+            parseJoins(normalized, upper, result);
+
+            // SET
+            const setStr = extractBetweenOriginal(normalized, upper, ' SET ', [' WHERE ', ' ORDER BY']);
+            if (setStr) {
+                const setParts = splitFields(setStr);
+                const setHtml = setParts.map(p => {
+                    const eqIdx = p.indexOf('=');
+                    if (eqIdx > 0) {
+                        const field = p.substring(0, eqIdx).trim();
+                        const val = p.substring(eqIdx + 1).trim();
+                        return `<span class="exp-tag">${escapeHtml(field)}</span> → ${escapeHtml(val)}`;
+                    }
+                    return `<span class="exp-tag">${escapeHtml(p)}</span>`;
+                }).join('<br>');
+                result.items.push({ icon: '✏️', label: '更新内容', value: setHtml });
+            }
+
+            // WHERE
+            parseWhere(normalized, upper, result);
+        }
+
+        function parseDelete(normalized, upper, result) {
+            // 削除テーブル
+            let tableStr = extractBetweenOriginal(normalized, upper, 'DELETE ', [' WHERE ', ' FROM ']);
+            if (!tableStr) {
+                tableStr = extractBetweenOriginal(normalized, upper, 'FROM ', [' WHERE ', ' ORDER BY']);
+            }
+            // DELETE * FROM / DELETE FROM パターン
+            const fromStr = extractBetweenOriginal(normalized, upper, ' FROM ', [' WHERE ', ' ORDER BY']);
+            if (fromStr) {
+                result.items.push({ icon: '⚠️', label: '削除対象', value: `<span class="exp-tag">${escapeHtml(fromStr)}</span> テーブルのデータを削除します` });
+            }
+
+            // WHERE
+            parseWhere(normalized, upper, result);
+
+            if (!upper.includes('WHERE')) {
+                result.items.push({ icon: '🚨', label: '注意', value: 'WHERE条件がないため、<strong>テーブル内の全データ</strong>が削除されます' });
+            }
+        }
+
+        function parseInsert(normalized, upper, result) {
+            // 挿入先
+            const intoMatch = normalized.match(/INSERT\s+INTO\s+([\w\[\]`.]+)/i);
+            if (intoMatch) {
+                result.items.push({ icon: '➕', label: '挿入先', value: `<span class="exp-tag">${escapeHtml(intoMatch[1])}</span> テーブルにデータを追加します` });
+            }
+
+            // フィールドリスト
+            const fieldsMatch = normalized.match(/INSERT\s+INTO\s+[\w\[\]`.]+\s*\(([^)]+)\)/i);
+            if (fieldsMatch) {
+                result.items.push({ icon: '📋', label: '挿入フィールド', value: formatFieldsAsTags(fieldsMatch[1]) });
+            }
+
+            // SELECT からの挿入
+            if (upper.includes('SELECT')) {
+                result.items.push({ icon: '🔄', label: 'データ元', value: '別のテーブルやクエリの検索結果からデータを追加します' });
+                parseFromClause(normalized, upper, result);
+                parseWhere(normalized, upper, result);
+            }
+        }
+
+        function parseCrossTab(normalized, upper, result) {
+            // TRANSFORM ... PIVOT
+            const pivotMatch = normalized.match(/PIVOT\s+(.+)$/i);
+            if (pivotMatch) {
+                result.items.push({ icon: '🔄', label: 'ピボット列', value: `<span class="exp-tag">${escapeHtml(pivotMatch[1].trim())}</span> の値を列見出しとして展開します` });
+            }
+            parseFromClause(normalized, upper, result);
+            parseJoins(normalized, upper, result);
+            parseWhere(normalized, upper, result);
+            parseGroupBy(normalized, upper, result);
+        }
+
+        function parseFromClause(normalized, upper, result) {
+            const fromStr = extractBetweenOriginal(normalized, upper, ' FROM ', [' WHERE ', ' GROUP BY', ' ORDER BY', ' HAVING', ' INNER JOIN', ' LEFT JOIN', ' RIGHT JOIN', ' CROSS JOIN', ' ON ']);
+            if (fromStr) {
+                const tables = splitFields(fromStr).filter(t => t && !t.match(/^\s*$/));
+                if (tables.length > 0) {
+                    const tablesHtml = tables.map(t => `<span class="exp-tag">${escapeHtml(t.trim())}</span>`).join(' ');
+                    const hint = tables.length > 1 ? ' <span class="exp-hint">（複数テーブルから取得）</span>' : '';
+                    result.items.push({ icon: '📁', label: '使用テーブル', value: tablesHtml + hint });
+                }
+            }
+        }
+
+        function parseJoins(normalized, upper, result) {
+            const joinPattern = /(INNER\s+JOIN|LEFT\s+(?:OUTER\s+)?JOIN|RIGHT\s+(?:OUTER\s+)?JOIN|CROSS\s+JOIN|JOIN)\s+([\w\[\]`.]+(?:\s+(?:AS\s+)?\w+)?)\s+ON\s+([^)]+?)(?=\s+(?:INNER|LEFT|RIGHT|CROSS|JOIN|WHERE|GROUP|ORDER|HAVING|$))/gi;
+            const joins = [];
+            let m;
+            while ((m = joinPattern.exec(normalized)) !== null) {
+                const joinType = m[1].trim().toUpperCase();
+                const table = m[2].trim();
+                const condition = m[3].trim();
+                let typeLabel = '';
+                let typeHint = '';
+                if (joinType.includes('INNER') || joinType === 'JOIN') {
+                    typeLabel = '内部結合';
+                    typeHint = '両方のテーブルに一致するデータのみ取得';
+                } else if (joinType.includes('LEFT')) {
+                    typeLabel = '左外部結合';
+                    typeHint = '左側テーブルのデータをすべて表示し、右側に一致がなければ空欄';
+                } else if (joinType.includes('RIGHT')) {
+                    typeLabel = '右外部結合';
+                    typeHint = '右側テーブルのデータをすべて表示し、左側に一致がなければ空欄';
+                } else if (joinType.includes('CROSS')) {
+                    typeLabel = 'クロス結合';
+                    typeHint = 'すべての組み合わせを生成';
+                }
+                joins.push({ table, condition, typeLabel, typeHint });
+            }
+            if (joins.length > 0) {
+                joins.forEach(j => {
+                    result.items.push({
+                        icon: '🔗',
+                        label: 'テーブル結合',
+                        value: `<span class="exp-join-type">${j.typeLabel}</span> <span class="exp-tag">${escapeHtml(j.table)}</span> <span class="exp-hint">条件: ${escapeHtml(j.condition)}</span><br><span class="exp-hint">（${j.typeHint}）</span>`
+                    });
+                });
+            }
+        }
+
+        function parseWhere(normalized, upper, result) {
+            const whereStr = extractBetweenOriginal(normalized, upper, ' WHERE ', [' GROUP BY', ' ORDER BY', ' HAVING', ' UNION ']);
+            if (whereStr) {
+                result.items.push({ icon: '🔍', label: '抽出条件', value: `<span class="exp-tag">${escapeHtml(whereStr)}</span> <span class="exp-hint">（この条件に合うデータだけを対象にします）</span>` });
+            }
+        }
+
+        function parseGroupBy(normalized, upper, result) {
+            const groupStr = extractBetweenOriginal(normalized, upper, ' GROUP BY ', [' HAVING', ' ORDER BY', ' UNION ']);
+            if (groupStr) {
+                const fields = splitFields(groupStr);
+                const fieldsHtml = fields.map(f => `<span class="exp-tag">${escapeHtml(f.trim())}</span>`).join(' ');
+                result.items.push({ icon: '📊', label: 'グループ化', value: `${fieldsHtml} ごとにデータをまとめて集計します` });
+            }
+        }
+
+        function parseHaving(normalized, upper, result) {
+            const havingStr = extractBetweenOriginal(normalized, upper, ' HAVING ', [' ORDER BY', ' UNION ']);
+            if (havingStr) {
+                result.items.push({ icon: '⚙️', label: '集計条件', value: `<span class="exp-tag">${escapeHtml(havingStr)}</span> <span class="exp-hint">（グループ化した後、この条件に合うグループだけを表示）</span>` });
+            }
+        }
+
+        function parseOrderBy(normalized, upper, result) {
+            const orderStr = extractBetweenOriginal(normalized, upper, ' ORDER BY ', [' UNION ']);
+            if (orderStr) {
+                const parts = splitFields(orderStr);
+                const orderHtml = parts.map(p => {
+                    const trimmed = p.trim();
+                    if (trimmed.toUpperCase().endsWith(' DESC')) {
+                        return `<span class="exp-tag">${escapeHtml(trimmed.slice(0, -5).trim())}</span> <span class="exp-hint">(降順 ↓)</span>`;
+                    } else if (trimmed.toUpperCase().endsWith(' ASC')) {
+                        return `<span class="exp-tag">${escapeHtml(trimmed.slice(0, -4).trim())}</span> <span class="exp-hint">(昇順 ↑)</span>`;
+                    }
+                    return `<span class="exp-tag">${escapeHtml(trimmed)}</span> <span class="exp-hint">(昇順 ↑)</span>`;
+                }).join(', ');
+                result.items.push({ icon: '↕️', label: '並び順', value: orderHtml });
+            }
+        }
+
+        function buildExplanationHtml(sql, tables) {
+            const parsed = parseSQL(sql);
+            if (!parsed.summary && parsed.items.length === 0) return '';
+            const tableNames = (tables || []).map(t => t.name);
+
+            let html = '<div class="query-explanation">';
+            html += '<div class="explanation-title">📖 クエリ解説</div>';
+            html += `<div class="explanation-summary">${parsed.summary}</div>`;
+
+            if (parsed.items.length > 0) {
+                html += '<div class="explanation-items">';
+                parsed.items.forEach(item => {
+                    // Make table name tags clickable
+                    let value = item.value;
+                    tableNames.forEach(tName => {
+                        const escaped = escapeHtml(tName);
+                        const regexSafe = escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const clickableTag = `<span class="exp-tag exp-table-link" onclick="navigateToTable('${tName.replace(/'/g, "\\'")}')">${escaped}</span>`;
+                        // Match with optional [] brackets around the name
+                        value = value.replace(new RegExp(`<span class="exp-tag">\\[?${regexSafe}\\]?</span>`, 'g'), clickableTag);
+                    });
+                    html += `<div class="explanation-item">`;
+                    html += `<span class="exp-icon">${item.icon}</span>`;
+                    html += `<span class="exp-label">${item.label}:</span>`;
+                    html += `<span class="exp-value">${value}</span>`;
+                    html += `</div>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderQueries(queries) {
+            const list = document.getElementById('queryList');
+
+            if (queries.length === 0) {
+                list.innerHTML = '<div class="empty-state"><span class="icon">📋</span><p>クエリが見つかりませんでした</p></div>';
+                return;
+            }
+
+            list.innerHTML = queries.map((q, i) => {
+                const typeClass = getTypeClass(q.type);
+                return `
+                <div class="query-card" data-name="${q.name.toLowerCase()}" data-sql="${escapeHtml(q.sql.toLowerCase())}" data-type="${typeClass}" id="query-card-${i}">
+                    <div class="query-header">
+                        <div class="query-title">
+                            <span class="query-name">${escapeHtml(q.name)}</span>
+                            <span class="query-type-tag ${typeClass}">${q.type}</span>
+                        </div>
+                        <div class="query-actions">
+                            <button class="btn-icon" onclick="copyQuery(${i})" title="SQLをコピー" id="copyBtn${i}">📋</button>
+                        </div>
+                    </div>
+                    <div class="query-body">
+                        <pre><code class="language-sql">${escapeHtml(formatSQL(q.sql))}</code></pre>
+                    </div>
+                    ${buildExplanationHtml(q.sql, currentData ? currentData.tables : [])}
+                </div>
+            `;
+            }).join('');
+
+            list.querySelectorAll('pre code').forEach(block => {
+                hljs.highlightElement(block);
+            });
+        }
+
+        function renderTables(tables, queries) {
+            const grid = document.getElementById('tableGrid');
+
+            if (tables.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><span class="icon">📦</span><p>テーブルが見つかりませんでした</p></div>';
+                return;
+            }
+
+            grid.innerHTML = tables.map((t, idx) => {
+                // Find related queries
+                const relatedQueries = (queries || []).filter((q, qi) => {
+                    const sqlUpper = q.sql.toUpperCase();
+                    const tNameUpper = t.name.toUpperCase();
+                    return sqlUpper.includes(tNameUpper);
+                });
+                let relatedHtml = '';
+                if (relatedQueries.length > 0) {
+                    const links = relatedQueries.map((q, qi) => {
+                        const qIdx = (queries || []).indexOf(q);
+                        return `<span class="related-link" onclick="navigateToQuery(${qIdx})">📝 ${escapeHtml(q.name)}</span>`;
+                    }).join('');
+                    relatedHtml = `<div class="table-related-queries"><div class="related-title">📎 関連クエリ (${relatedQueries.length})</div>${links}</div>`;
+                }
+                return `
+                <div class="table-card" id="table-card-${idx}" data-table-name="${t.name}">
+                    <div class="table-card-name">
+                        <span class="icon">📊</span>
+                        ${escapeHtml(t.name)}
+                    </div>
+                    <div class="table-card-fields">
+                        ${t.fields.map(f => `<span class="field-tag">${escapeHtml(f)}</span>`).join('')}
+                    </div>
+                    ${relatedHtml}
+                </div>
+            `;
+            }).join('');
+        }
+
+        function renderRelations(relations) {
+            const list = document.getElementById('relationList');
+
+            if (relations.length === 0) {
+                list.innerHTML = '<div class="empty-state"><span class="icon">🔗</span><p>リレーションシップが見つかりませんでした</p></div>';
+                return;
+            }
+
+            list.innerHTML = relations.map(r => `
+                <div class="relation-item">
+                    <span class="relation-table">${escapeHtml(r.table)}</span>
+                    <span class="relation-arrow">→</span>
+                    <span class="relation-table">${escapeHtml(r.foreign_table)}</span>
+                    <span class="relation-fields">
+                        ${r.fields.map(f => `${escapeHtml(f.from_field)} = ${escapeHtml(f.to_field)}`).join(', ')}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // ===== Search & Filter =====
+        document.getElementById('querySearch').addEventListener('input', () => applyFilters());
+
+        // ===== Navigation (Cross-links) =====
+        function navigateToQuery(index) {
+            // Switch to queries tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelector('.tab[data-tab="queries"]').classList.add('active');
+            document.getElementById('panel-queries').classList.add('active');
+            // Scroll to query card
+            const card = document.getElementById(`query-card-${index}`);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.remove('highlight-flash');
+                void card.offsetWidth;
+                card.classList.add('highlight-flash');
+            }
+        }
+
+        function navigateToTable(tableName) {
+            // Switch to tables tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelector('.tab[data-tab="tables"]').classList.add('active');
+            document.getElementById('panel-tables').classList.add('active');
+            // Find and scroll to table card
+            const cards = document.querySelectorAll('.table-card');
+            cards.forEach(card => {
+                if (card.dataset.tableName === tableName) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.remove('highlight-flash');
+                    void card.offsetWidth;
+                    card.classList.add('highlight-flash');
+                }
+            });
+        }
+
+        // ===== Actions =====
+        function copyQuery(index) {
+            const sql = currentData.queries[index].sql;
+            navigator.clipboard.writeText(sql).then(() => {
+                const btn = document.getElementById(`copyBtn${index}`);
+                btn.classList.add('copied');
+                btn.textContent = '✅';
+                showToast('SQL をコピーしました');
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋';
+                }, 1500);
+            });
+        }
+
+        function downloadAll() {
+            if (!currentData) return;
+
+            const lines = [];
+            lines.push('='.repeat(50));
+            lines.push(`データベース: ${currentData.filename}`);
+            lines.push(`出力日時: ${currentData.exported_at}`);
+            lines.push('='.repeat(50));
+            lines.push('');
+
+            // Tables
+            lines.push('■■■ テーブル一覧 ■■■');
+            lines.push('');
+            currentData.tables.forEach(t => {
+                lines.push(`  ・${t.name}`);
+                lines.push(`    フィールド: ${t.fields.join(', ')}`);
+            });
+            lines.push('');
+
+            // Relationships
+            lines.push('■■■ リレーションシップ ■■■');
+            lines.push('');
+            (currentData.relationships || []).forEach(r => {
+                const fields = r.fields.map(f => `${f.from_field}=${f.to_field}`).join(', ');
+                lines.push(`  ${r.table} → ${r.foreign_table}  (${fields})`);
+            });
+            lines.push('');
+
+            // Queries
+            lines.push('■■■ クエリ一覧とSQL定義 ■■■');
+            lines.push('');
+            currentData.queries.forEach((q, i) => {
+                lines.push(`【${i + 1}】 ${q.name}  [${q.type}]`);
+                lines.push('-'.repeat(50));
+                lines.push(q.sql);
+                lines.push('');
+                lines.push('');
+            });
+
+            lines.push('='.repeat(50));
+            lines.push(`総クエリ数: ${currentData.queries.length}`);
+            lines.push('='.repeat(50));
+
+            const text = lines.join('\n');
+            const baseName = currentData.filename.replace(/\.(accdb|mdb)$/i, '');
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}_クエリ一覧.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('ダウンロードを開始しました');
+        }
+
+        // ===== Utils =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+
+</html>
