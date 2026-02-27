@@ -198,3 +198,9 @@ DAOは `DAO.DBEngine.120`（Office 2016+）を優先し、失敗した場合は 
 | パススルー | パススルークエリ |
 | ユニオン | UNION クエリ |
 | その他 | 上記以外 |
+
+---
+
+## ライセンス
+
+[MIT License](https://opensource.org/licenses/MIT)
